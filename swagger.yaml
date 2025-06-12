@@ -9,7 +9,10 @@ info:
     - See /api-docs for interactive docs.
 
 servers:
+  - url: https://airplane-booking-system.onrender.com
+    description: Production Server
   - url: http://localhost:3000
+    description: Local Development Server
 
 tags:
   - name: Flights

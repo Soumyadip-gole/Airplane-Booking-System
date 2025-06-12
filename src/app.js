@@ -44,7 +44,7 @@ app.get('/', (req, res) => {
     res.status(200).send(
         `<h1>Welcome to the Flight Booking API</h1>
          <p>Visit <a href="/api-docs">API Documentation</a> for more details.</p>`
-    ););
+    );
 })
 
 //connecting db and starting server

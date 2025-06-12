@@ -2,6 +2,9 @@
 
 A secure, scalable RESTful API for airplane bookings, user authentication (JWT & Google OAuth), flight search, and user management. Built with Node.js, Express, Sequelize (PostgreSQL), and Passport.js.
 
+## 🌐 Live API
+The API is hosted at: [https://airplane-booking-system.onrender.com/](https://airplane-booking-system.onrender.com/)
+
 ---
 
 ## 🚀 Features
