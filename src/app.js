@@ -7,12 +7,6 @@ app.use(passport.initialize());
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
 
-//swagger
-const yaml = require('yamljs');
-const swaggerUi = require('swagger-ui-express');
-const swaggerDocument = yaml.load('./swagger.yaml');
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
-
 const helmet = require('helmet')
 const cors = require('cors')
 const xss = require('./middleware/xss')
@@ -29,6 +23,12 @@ app.use(ratelimit({
 }));
 
 
+//swagger
+const yaml = require('yamljs');
+const swaggerUi = require('swagger-ui-express');
+const swaggerDocument = yaml.load('./swagger.yaml');
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument));
+
 const flightRoutes = require('./route/flight');
 const authRoutes = require('./route/auth');
 const userRoutes = require('./route/user');
@@ -40,7 +40,12 @@ app.use('/api/flights', flightRoutes);
 app.use('/auth', authRoutes);
 app.use('/user',authMiddleware, userRoutes);
 app.use('/booking',authMiddleware, bookingRoutes);
-
+app.get('/', (req, res) => {
+    res.status(200).send(
+        `<h1>Welcome to the Flight Booking API</h1>
+         <p>Visit <a href="/api-docs">API Documentation</a> for more details.</p>`
+    ););
+})
 
 //connecting db and starting server
 const sequelize = require('./config/db');
