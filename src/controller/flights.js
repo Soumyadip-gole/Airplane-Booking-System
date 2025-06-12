@@ -3,7 +3,7 @@ const { getFlightsByAirport,getFlightsById } = require('../services/flights');
 const searchallflights = async (req, res) => {
     try {
         // Extract parameters from request body
-        const { from, fromLocal, toLocal,to  } = req.body;
+        const { from, fromLocal, toLocal,to  } = req.query;
 
         // Validate required parameter
         if (!from|| !fromLocal || !to || !toLocal) {
@@ -66,7 +66,7 @@ const searchallflights = async (req, res) => {
 
 const searchoneflight = async (req, res) => {
     try {
-        const { id, date } = req.body;
+        const { id, date } = req.query;
         if (!id || !date) {
             return res.status(400).json({ error: 'Missing required parameter: id or date' });
         }
