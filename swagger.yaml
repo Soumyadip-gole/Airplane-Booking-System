@@ -3,24 +3,23 @@ info:
   title: Airplane Booking System API
   version: 1.0.0
   description: |
-    This RESTful API allows users to search and book flights, manage their bookings, and handle user authentication and registration.
-    - **User authentication:** Supports JWT login/register and Google OAuth.
-    - **Booking management:** Users can create, view, update, and cancel bookings.
-    - **Flight search:** Users can search all flights or get details of a specific flight.
-    - **User management:** Users can retrieve, update, or delete their account.
+    RESTful API for searching flights, booking, user management, and authentication (JWT & Google OAuth).
+    - **No seat booking or payment.**
+    - Flight data is informational; bookings are recorded in the system.
+    - See /api-docs for interactive docs.
 
 servers:
   - url: http://localhost:3000
 
 tags:
   - name: Flights
-    description: Operations related to searching and retrieving flights.
+    description: Search and retrieve flights.
   - name: Auth
-    description: User registration, login, and OAuth flows.
+    description: Registration, login, OAuth.
   - name: User
-    description: User profile management.
+    description: Profile management.
   - name: Booking
-    description: Booking creation, retrieval, update, and cancellation.
+    description: Booking creation, update, cancel.
 
 components:
   securitySchemes:
@@ -31,7 +30,6 @@ components:
   schemas:
     User:
       type: object
-      required: [name, email]
       properties:
         id:
           type: integer
@@ -58,7 +56,6 @@ components:
           format: date-time
     Booking:
       type: object
-      required: [flightNumber, airline, flightDate, depIata, arrIata]
       properties:
         id:
           type: integer
@@ -71,7 +68,6 @@ components:
           example: "Air India"
         flightDate:
           type: string
-          format: date
           example: "2025-07-01"
         depIata:
           type: string
@@ -88,9 +84,6 @@ components:
         tier:
           type: string
           example: "Economy"
-        seat:
-          type: string
-          example: "12A"
         status:
           type: string
           example: "CONFIRMED"
@@ -120,64 +113,131 @@ paths:
     get:
       tags: [Flights]
       summary: Search all flights
-      description: Retrieve all available flights matching optional query parameters.
+      description: Retrieve available flights. Requires from, fromLocal, to, toLocal (in body; see docs)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                from:
+                  type: string
+                  description: Departure IATA code
+                fromLocal:
+                  type: string
+                  description: Start local datetime (YYYY-MM-DDTHH:mm)
+                to:
+                  type: string
+                  description: Arrival IATA code
+                toLocal:
+                  type: string
+                  description: End local datetime (YYYY-MM-DDTHH:mm)
       responses:
         '200':
-          description: List of flights
-          content:
-            application/json:
-              schema:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    flightNumber:
-                      type: string
-                    airline:
-                      type: string
-                    flightDate:
-                      type: string
-                    depIata:
-                      type: string
-                    arrIata:
-                      type: string
-        '500':
-          description: Server error
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
-
-  /api/flights/getone:
-    get:
-      tags: [Flights]
-      summary: Get a specific flight
-      description: Retrieve details for a single flight using query parameters (e.g., flight number).
-      parameters:
-        - name: flightNumber
-          in: query
-          required: true
-          schema:
-            type: string
-      responses:
-        '200':
-          description: Flight detail
+          description: List of filtered flights
           content:
             application/json:
               schema:
                 type: object
+                properties:
+                  filteredFlights:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        flightNumber: { type: string }
+                        airline:
+                          type: object
+                          properties:
+                            name: { type: string }
+                            code: { type: string }
+                        departure:
+                          type: object
+                          properties:
+                            airport: { type: string }
+                        arrival:
+                          type: object
+                          properties:
+                            airport: { type: string }
+                            airportName: { type: string }
+                        aircraft:
+                          type: object
+                          properties:
+                            model: { type: string }
+                            registration: { type: string }
+                        status: { type: string }
+                        duration: { type: string }
+        '500':
+          description: Server error
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/Error' }
+
+  /api/flights/searchone:
+    get:
+      tags: [Flights]
+      summary: Get a specific flight
+      description: Retrieve details for a single flight using id (flight number) and date.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id:
+                  type: string
+                  description: Flight number
+                date:
+                  type: string
+                  description: Date (YYYY-MM-DD)
+      responses:
+        '200':
+          description: Flight detail(s)
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  flights:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        flightNumber: { type: string }
+                        airline: { type: string }
+                        status: { type: string }
+                        from:
+                          type: object
+                          properties:
+                            airport: { type: string }
+                            city: { type: string }
+                            time: { type: string }
+                            terminal: { type: string }
+                        to:
+                          type: object
+                          properties:
+                            airport: { type: string }
+                            city: { type: string }
+                            time: { type: string }
+                            actualTime: { type: string }
+                            terminal: { type: string }
+                            gate: { type: string }
+                        aircraft: { type: string }
+                        distance: { type: string }
+                        duration: { type: string }
         '404':
           description: Flight not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /auth/google:
     get:
       tags: [Auth]
       summary: Google OAuth login
-      description: Redirects user to Google OAuth login and returns to callback with JWT upon success.
+      description: Redirects user to Google OAuth login.
       responses:
         '302':
           description: Redirect to Google OAuth provider
@@ -186,7 +246,7 @@ paths:
     get:
       tags: [Auth]
       summary: Google OAuth callback
-      description: Handles OAuth callback from Google and issues a JWT.
+      description: Handles OAuth callback and issues a JWT.
       responses:
         '200':
           description: JWT token and user info
@@ -195,24 +255,20 @@ paths:
               schema:
                 type: object
                 properties:
-                  token:
-                    type: string
-                  name:
-                    type: string
-                  email:
-                    type: string
+                  token: { type: string }
+                  name: { type: string }
+                  email: { type: string }
         '401':
           description: Authentication failed
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /auth/login:
     post:
       tags: [Auth]
       summary: User login (JWT)
-      description: Login with email and password to receive a JWT token.
+      description: Login with email and password to receive a JWT.
       requestBody:
         required: true
         content:
@@ -221,10 +277,8 @@ paths:
               type: object
               required: [email, password]
               properties:
-                email:
-                  type: string
-                password:
-                  type: string
+                email: { type: string }
+                password: { type: string }
       responses:
         '200':
           description: JWT token and user info
@@ -233,49 +287,54 @@ paths:
               schema:
                 type: object
                 properties:
-                  token:
-                    type: string
-                  name:
-                    type: string
-                  email:
-                    type: string
+                  token: { type: string }
+                  name: { type: string }
+                  email: { type: string }
         '401':
           description: Invalid credentials
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /auth/register:
     post:
       tags: [Auth]
       summary: User registration
-      description: Register a new user account with name, email, and password.
+      description: Register a new user account.
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              type: object
+              required: [name, email, password]
+              properties:
+                name: { type: string }
+                email: { type: string }
+                password: { type: string }
+                number: { type: string }
       responses:
         '201':
           description: Registered user details
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/User'
+                type: object
+                properties:
+                  token: { type: string }
+                  name: { type: string }
+                  email: { type: string }
         '400':
           description: Email already exists or invalid input
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /user/update:
     patch:
       tags: [User]
       summary: Update user profile
-      description: Update the authenticated user's profile information.
+      description: Update the authenticated user's profile.
       security:
         - bearerAuth: []
       requestBody:
@@ -283,20 +342,23 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/User'
+              type: object
+              properties:
+                name: { type: string }
+                email: { type: string }
+                number: { type: string }
+                password: { type: string }
       responses:
         '200':
           description: Updated user info
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+              schema: { $ref: '#/components/schemas/User' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /user/delete:
     delete:
@@ -306,14 +368,19 @@ paths:
       security:
         - bearerAuth: []
       responses:
-        '204':
-          description: User deleted successfully (no content)
+        '200':
+          description: User deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /user/get:
     get:
@@ -327,20 +394,18 @@ paths:
           description: User profile information
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/User'
+              schema: { $ref: '#/components/schemas/User' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /booking:
     get:
       tags: [Booking]
       summary: Get all bookings for current user
-      description: Retrieve all bookings belonging to the authenticated user.
+      description: Retrieve all bookings for the authenticated user.
       security:
         - bearerAuth: []
       responses:
@@ -350,14 +415,12 @@ paths:
             application/json:
               schema:
                 type: array
-                items:
-                  $ref: '#/components/schemas/Booking'
+                items: { $ref: '#/components/schemas/Booking' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
     post:
       tags: [Booking]
       summary: Create a new booking
@@ -369,120 +432,124 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Booking'
+              type: object
+              required: [flightNumber, airline, flightDate, depIata, arrIata]
+              properties:
+                flightNumber: { type: string }
+                airline: { type: string }
+                flightDate: { type: string }
+                depIata: { type: string }
+                arrIata: { type: string }
+                depTime: { type: string }
+                arrTime: { type: string }
+                tier: { type: string }
       responses:
         '201':
           description: Booking created
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Booking'
+              schema: { $ref: '#/components/schemas/Booking' }
         '400':
           description: Invalid input
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
 
   /booking/{id}:
     get:
       tags: [Booking]
       summary: Get booking by ID
-      description: Retrieve the details of a specific booking by its ID for the authenticated user.
+      description: Retrieve a specific booking by its ID.
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
         '200':
           description: Booking details
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Booking'
+              schema: { $ref: '#/components/schemas/Booking' }
         '404':
           description: Booking not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
     patch:
       tags: [Booking]
       summary: Update booking by ID
-      description: Update an existing booking by its ID.
+      description: Update an existing booking by its ID (only tier can be changed).
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/Booking'
+              type: object
+              properties:
+                tier: { type: string }
       responses:
         '200':
           description: Booking updated
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Booking'
+              schema: { $ref: '#/components/schemas/Booking' }
         '404':
           description: Booking not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
     delete:
       tags: [Booking]
       summary: Cancel booking by ID
-      description: Cancel (delete) a specific booking by its ID.
+      description: Cancel (sets status to "cancelled") a booking by its ID.
       security:
         - bearerAuth: []
       parameters:
         - name: id
           in: path
           required: true
-          schema:
-            type: integer
+          schema: { type: integer }
       responses:
-        '204':
-          description: Booking canceled (no content)
+        '200':
+          description: Booking cancelled
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string }
         '404':
           description: Booking not found
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
         '401':
           description: Unauthorized access
           content:
             application/json:
-              schema:
-                $ref: '#/components/schemas/Error'
+              schema: { $ref: '#/components/schemas/Error' }
