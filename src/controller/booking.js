@@ -3,7 +3,7 @@ require('dotenv').config();
 
 const createBooking = async (req, res) => {
     try {
-        const { flightNumber, airline, flightDate, depIata, arrIata, depTime, arrTime, tier, seat } = req.body;
+        const { flightNumber, airline, flightDate, depIata, arrIata, depTime, arrTime, tier } = req.body;
         const userId = req.user.id;
 
         const newBooking = await booking.create({
@@ -15,7 +15,6 @@ const createBooking = async (req, res) => {
             depTime,
             arrTime,
             tier,
-            seat,
             userId
         });
         res.status(201).json({ message: 'Booking created successfully', booking: newBooking });
@@ -84,10 +83,9 @@ const updateBooking = async (req, res) => {
             return res.status(404).json({ message: 'No such booking found' });
         }
 
-        const { tier, seat,  } = req.body;
+        const { tier } = req.body;
 
         bookingToUpdate.tier = tier || bookingToUpdate.tier;
-        bookingToUpdate.seat = seat || bookingToUpdate.seat;
 
         await bookingToUpdate.save();
         res.status(200).json({ message: 'Booking updated successfully', booking: bookingToUpdate });

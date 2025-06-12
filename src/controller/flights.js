@@ -118,11 +118,7 @@ const searchoneflight = async (req, res) => {
             return flightDetail;
         });
 
-        res.json({
-            success: true,
-            count: flights.length,
-            flights
-        });
+        res.json({flights});
     } catch (error) {
         console.error('Flight search error:', error.message);
         res.status(500).json({
