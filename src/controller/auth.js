@@ -1,5 +1,7 @@
 const user = require('../model/user');
 const jwt = require('jsonwebtoken');
+const {hashPassword, verifyPassword}=require('../services/hash');
+
 require('dotenv').config();
 
 const login = async (req, res) => {
@@ -12,7 +14,7 @@ const login = async (req, res) => {
         if (!userData) {
             return res.status(404).json({ message: 'User not found' });
         }
-        if (userData.password !== password) {
+        if (!await verifyPassword(password, userData.password)) {
             return res.status(401).json({ message: 'Invalid credentials' });
         }
         let token = jwt.sign({ id:userData.id,email:userData.email,name:userData.name }, process.env.AUTH_SECRET, { expiresIn: '4h' })
@@ -33,7 +35,7 @@ const register = async (req, res) => {
         if (userData) {
             return res.status(404).json({ message: 'email already in use' });
         }
-        const newUser = await user.create({ email, password,number ,name});
+        const newUser = await user.create({ email, password:await hashPassword(password),number ,name});
         token=jwt.sign({ id:newUser.id,email:newUser.email,name:newUser.name }, process.env.AUTH_SECRET, { expiresIn: '4h' });
         res.json({ token:token, name: newUser.name, email: newUser.email });
     }catch (error) {
