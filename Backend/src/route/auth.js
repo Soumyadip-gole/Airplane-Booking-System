@@ -22,7 +22,7 @@ router.get('/google/callback',
             { expiresIn: '4h' }
         );
 
-        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5173';
+        const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:5174';
         const userDataEncoded = encodeURIComponent(JSON.stringify({
             name: user.name,
             email: user.email,
