@@ -4,46 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="83b4409a-fee1-45ea-9060-8ceb90406d5d" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.gitignore" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/.gitignore" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.idea/.gitignore" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.idea/modules.xml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.idea/project.iml" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/_metadata.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/chunk-JRE55LYH.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/chunk-JRE55LYH.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/chunk-YBFRUR3B.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/chunk-YBFRUR3B.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/lucide-react.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/lucide-react.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react-dom_client.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react-dom_client.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react-router-dom.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react-router-dom.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_93e3d0e2/react.js.map" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_acac0efe/_metadata.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_acac0efe/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/.vite/deps_temp_c7cfee6c/package.json" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/dist/index.html" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/eslint.config.js" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/index.html" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/index.html" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/package-lock.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package-lock.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/package.json" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/package.json" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/postcss.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/postcss.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/contexts/AuthContext.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/contexts/AuthContext.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/index.css" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/index.css" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/pages/AuthPage.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/pages/AuthPage.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/pages/GoogleCallback.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/pages/GoogleCallback.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/pages/MyBookings.tsx" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/pages/MyBookings.tsx" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/services/api.ts" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/services/api.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/src/types/index.ts" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/src/types/index.ts" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/tailwind.config.js" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/tailwind.config.js" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Frontend/vite.config.ts" beforeDir="false" afterPath="$PROJECT_DIR$/Frontend/vite.config.ts" afterDir="false" />
-    </list>
+    <list default="true" id="83b4409a-fee1-45ea-9060-8ceb90406d5d" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -133,7 +94,7 @@
       <workItem from="1749879778027" duration="547000" />
       <workItem from="1749880343419" duration="9414000" />
       <workItem from="1749980183789" duration="281000" />
-      <workItem from="1749981323367" duration="668000" />
+      <workItem from="1749981323367" duration="984000" />
     </task>
     <servers />
   </component>
