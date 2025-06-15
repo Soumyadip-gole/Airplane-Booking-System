@@ -38,11 +38,28 @@ const GoogleCallback: React.FC = () => {
         // If not found in regular params, check if they're in the hash part
         if ((!token || !userParam) && location.hash) {
           console.log('🔍 Checking hash part of URL:', location.hash);
-          const hashParams = new URLSearchParams(location.hash.substring(location.hash.indexOf('?')));
-          token = token || hashParams.get('token');
-          userParam = userParam || hashParams.get('user');
-          console.log('🔑 Token from hash:', token ? 'Present' : 'Missing');
-          console.log('👤 User param from hash:', userParam ? 'Present' : 'Missing');
+
+          // Handle different hash formats correctly
+          let hashQueryString = '';
+          if (location.hash.includes('?')) {
+            // Extract query string from hash (#/path?query)
+            hashQueryString = location.hash.substring(location.hash.indexOf('?'));
+          } else if (location.hash.includes('/callback/')) {
+            // Handle case where parameters might be after callback path
+            const callbackIndex = location.hash.indexOf('/callback/');
+            if (callbackIndex !== -1) {
+              hashQueryString = '?' + location.hash.substring(callbackIndex + 10); // +10 for "/callback/"
+            }
+          }
+
+          // Create URLSearchParams from the extracted query string
+          if (hashQueryString) {
+            const hashParams = new URLSearchParams(hashQueryString);
+            token = token || hashParams.get('token');
+            userParam = userParam || hashParams.get('user');
+            console.log('🔑 Token from hash:', token ? 'Present' : 'Missing');
+            console.log('👤 User param from hash:', userParam ? 'Present' : 'Missing');
+          }
         }
 
         if (!token) {
@@ -208,4 +225,3 @@ const GoogleCallback: React.FC = () => {
 };
 
 export default GoogleCallback;
-
