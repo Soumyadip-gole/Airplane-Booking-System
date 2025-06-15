@@ -29,7 +29,9 @@ router.get('/google/callback',
             id: user.id
         }));
 
-        res.redirect(`${frontendUrl}/auth/google/callback?token=${token}&user=${userDataEncoded}`);
+        // Redirect to the frontend root with the auth callback as a hash route
+        // This ensures React Router handles it properly
+        res.redirect(`${frontendUrl}/#/auth/google/callback?token=${token}&user=${userDataEncoded}`);
     }
 );
 
@@ -39,4 +41,3 @@ router.post('/login',authcontroller.login)
 router.post('/register',authcontroller.register)
 
 module.exports= router;
-
