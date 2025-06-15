@@ -1,35 +1,20 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../types';
-import { AlertTriangle, CheckCircle, Loader, Plane } from 'lucide-react';
+import { Loader } from 'lucide-react';
 
 const GoogleCallback: React.FC = () => {
-  // Add debug logging at the very start
-  console.log('🔍 GoogleCallback component is rendering');
-  console.log('🌐 Current URL:', window.location.href);
-  
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const location = useLocation();
   const { setAuthFromExternal } = useAuth();
-  const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
-  const [errorMessage, setErrorMessage] = useState('');
-  const [userName, setUserName] = useState('');
-
-  // Log URL parameters immediately
-  console.log('🔑 Token from URL:', searchParams.get('token') ? 'Present' : 'Missing');
-  console.log('👤 User param from URL:', searchParams.get('user') ? 'Present' : 'Missing');
-  console.log('📍 Current location:', location);
 
   useEffect(() => {
-    console.log('🔄 useEffect triggered in GoogleCallback');
-    
     const handleGoogleCallback = async () => {
       try {
         console.log('🔄 Processing Google authentication callback...');
-        console.log('📍 Current URL:', window.location.href);
-        
+
         // Extract token and user from URL parameters
         // Check both regular searchParams and hash-based params
         let token = searchParams.get('token');
@@ -37,59 +22,23 @@ const GoogleCallback: React.FC = () => {
 
         // If not found in regular params, check if they're in the hash part
         if ((!token || !userParam) && location.hash) {
-          console.log('🔍 Checking hash part of URL:', location.hash);
-
-          // Handle different hash formats correctly
-          let hashQueryString = '';
-          if (location.hash.includes('?')) {
-            // Extract query string from hash (#/path?query)
-            hashQueryString = location.hash.substring(location.hash.indexOf('?'));
-          } else if (location.hash.includes('/callback/')) {
-            // Handle case where parameters might be after callback path
-            const callbackIndex = location.hash.indexOf('/callback/');
-            if (callbackIndex !== -1) {
-              hashQueryString = '?' + location.hash.substring(callbackIndex + 10); // +10 for "/callback/"
-            }
-          }
-
-          // Create URLSearchParams from the extracted query string
-          if (hashQueryString) {
-            const hashParams = new URLSearchParams(hashQueryString);
+          // Parse the hash properly - the format appears to be #/path?query
+          const hashParts = location.hash.split('?');
+          if (hashParts.length > 1) {
+            const hashParams = new URLSearchParams(hashParts[1]);
             token = token || hashParams.get('token');
             userParam = userParam || hashParams.get('user');
-            console.log('🔑 Token from hash:', token ? 'Present' : 'Missing');
-            console.log('👤 User param from hash:', userParam ? 'Present' : 'Missing');
           }
         }
 
-        if (!token) {
-          throw new Error('Authentication token is missing');
+        if (!token || !userParam) {
+          throw new Error('Missing authentication data');
         }
         
-        if (!userParam) {
-          throw new Error('User information is missing');
-        }
-        
-        // Parse user data - the URL shows it's already URL encoded
-        let userData;
-        try {
-          // Decode the URL-encoded JSON string
-          const decodedUserData = decodeURIComponent(userParam);
-          console.log('📝 Decoded user data:', decodedUserData);
-          
-          // Parse the JSON
-          userData = JSON.parse(decodedUserData);
-          console.log('✅ Parsed user data:', userData);
-        } catch (parseError) {
-          console.error('❌ Failed to parse user data:', parseError);
-          throw new Error('Invalid user data format');
-        }
-        
-        // Validate user data
-        if (!userData.email || !userData.name) {
-          throw new Error('Missing required user information');
-        }
-        
+        // Parse user data
+        const decodedUserData = decodeURIComponent(userParam);
+        const userData = JSON.parse(decodedUserData);
+
         // Create User object
         const user: User = {
           id: userData.id ? userData.id.toString() : Date.now().toString(),
@@ -98,127 +47,31 @@ const GoogleCallback: React.FC = () => {
           number: userData.number || undefined
         };
         
-        console.log('✅ Setting authentication for user:', user.name);
-        setUserName(user.name);
-        
-        // Set authentication
+        // Set authentication in the context
         setAuthFromExternal(token, user);
         
-        setStatus('success');
-        
-        // Redirect to search page after a brief success display
-        setTimeout(() => {
-          console.log('🚀 Redirecting to search page...');
-          navigate('/search', { replace: true });
-        }, 1500);
-        
+        // Immediately redirect to search page
+        navigate('/search');
+
       } catch (error) {
-        console.error('❌ Google authentication failed:', error);
-        setErrorMessage(error instanceof Error ? error.message : 'Authentication failed');
-        setStatus('error');
-        
-        // Redirect to auth page after showing error
-        setTimeout(() => {
-          navigate('/auth', { replace: true });
-        }, 3000);
+        console.error('❌ Google authentication callback error:', error);
+        // If authentication fails, redirect to auth page
+        navigate('/auth');
       }
     };
 
     handleGoogleCallback();
-  }, [searchParams, navigate, setAuthFromExternal, location]);
+  }, [navigate, searchParams, location.hash, setAuthFromExternal]);
 
-  console.log('🎨 About to render with status:', status);
-
-  const renderContent = () => {
-    console.log('🎨 renderContent called with status:', status);
-    
-    switch (status) {
-      case 'processing':
-        console.log('🔄 Rendering processing state');
-        return (
-          <>
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-blue-400 to-blue-500 rounded-full blur-2xl opacity-20 animate-pulse"></div>
-              <Loader className="relative h-20 w-20 text-blue-600 mx-auto animate-spin" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Completing Google Sign-In</h2>
-            <p className="text-lg text-gray-600 mb-6">
-              Processing your authentication...
-            </p>
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce"></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }}></div>
-              <div className="w-2 h-2 bg-blue-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></div>
-            </div>
-          </>
-        );
-
-      case 'success':
-        console.log('✅ Rendering success state');
-        return (
-          <>
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-green-400 to-blue-500 rounded-full blur-2xl opacity-20"></div>
-              <CheckCircle className="relative h-20 w-20 text-green-500 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to SkyBook!</h2>
-            <p className="text-lg text-gray-600 mb-4">
-              Hello {userName}! You've been successfully signed in.
-            </p>
-            <div className="flex items-center justify-center space-x-2 text-sm text-blue-600 mb-4">
-              <Plane className="h-4 w-4" />
-              <span>Taking you to flight search...</span>
-            </div>
-            <div className="w-full bg-blue-100 rounded-full h-2">
-              <div className="bg-gradient-to-r from-blue-500 to-blue-600 h-2 rounded-full animate-pulse" style={{ width: '100%' }}></div>
-            </div>
-          </>
-        );
-
-      case 'error':
-        console.log('❌ Rendering error state');
-        return (
-          <>
-            <div className="relative mb-8">
-              <div className="absolute inset-0 bg-gradient-to-r from-red-400 to-red-500 rounded-full blur-2xl opacity-20"></div>
-              <AlertTriangle className="relative h-20 w-20 text-red-500 mx-auto" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-4">Authentication Failed</h2>
-            <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-6">
-              <p className="text-red-800 font-medium mb-2">Error:</p>
-              <p className="text-red-700 text-sm">{errorMessage}</p>
-            </div>
-            <p className="text-gray-600 mb-4">
-              You'll be redirected to try again.
-            </p>
-            <div className="flex items-center justify-center space-x-2 text-sm text-gray-500">
-              <span>Redirecting...</span>
-              <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin"></div>
-            </div>
-          </>
-        );
-
-      default:
-        console.log('❓ Rendering default state (null)');
-        return null;
-    }
-  };
-
-  console.log('🎨 Final render with status:', status);
-
+  // Simple loading screen while processing
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-blue-900 to-slate-900 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/8 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-sky-500/8 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute top-3/4 left-3/4 w-64 h-64 bg-cyan-500/8 rounded-full blur-3xl animate-pulse delay-2000"></div>
-      </div>
-
-      <div className="max-w-md w-full relative z-10">
-        <div className="card-modern p-8 text-center">
-          {renderContent()}
+    <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50">
+      <div className="w-full max-w-md p-8 space-y-8 bg-white rounded-lg shadow-md text-center">
+        <h2 className="text-2xl font-bold text-gray-800">Completing Login</h2>
+        <div className="flex justify-center">
+          <Loader className="h-10 w-10 text-blue-500 animate-spin" />
         </div>
+        <p className="text-gray-600">Please wait...</p>
       </div>
     </div>
   );
