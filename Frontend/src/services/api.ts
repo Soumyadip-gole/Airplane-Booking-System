@@ -7,6 +7,7 @@ class ApiService {
 
   setToken(token: string | null) {
     this.token = token;
+    console.log('🔑 API token updated:', !!token);
   }
 
   private async request<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
@@ -21,25 +22,44 @@ class ApiService {
     }
 
     try {
+      console.log(`🌐 Making API request to: ${endpoint}`);
+      
       const response = await fetch(url, {
         ...options,
         headers,
       });
 
+      console.log(`📡 API response status: ${response.status} for ${endpoint}`);
+
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ message: 'An error occurred' }));
-        throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch {
+          errorData = { message: `HTTP error! status: ${response.status}` };
+        }
+        
+        const errorMessage = errorData.message || errorData.error || `HTTP error! status: ${response.status}`;
+        console.error(`❌ API error for ${endpoint}:`, errorMessage);
+        throw new Error(errorMessage);
       }
 
-      return response.json();
+      const data = await response.json();
+      console.log(`✅ API request successful for ${endpoint}`);
+      return data;
     } catch (error) {
+      console.error(`❌ API request failed for ${endpoint}:`, error);
+      
+      // Provide more specific error messages
       if (error instanceof TypeError && error.message.includes('fetch')) {
-        throw new Error(`Unable to connect to server. Please check your internet connection.`);
+        throw new Error(`Unable to connect to server at ${BASE_URL}. Please check your internet connection or try again later.`);
       }
+      
       throw error;
     }
   }
 
+  // Helper function to transform search flight data to frontend format
   private transformSearchFlightData(serverFlight: any): Flight {
     return {
       id: serverFlight.flightNumber?.replace(/\s+/g, '') || Math.random().toString(36).substr(2, 9),
@@ -56,6 +76,7 @@ class ApiService {
     };
   }
 
+  // Helper function to transform flight details data to frontend format
   private transformFlightDetailsData(serverFlight: any): Flight {
     return {
       id: serverFlight.flightNumber?.replace(/\s+/g, '') || Math.random().toString(36).substr(2, 9),
@@ -75,6 +96,7 @@ class ApiService {
 
   // Auth endpoints
   async login(data: { email: string; password: string }): Promise<AuthResponse> {
+    console.log('🔐 Attempting login for:', data.email);
     return this.request('/auth/login', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -82,6 +104,7 @@ class ApiService {
   }
 
   async register(data: { email: string; password: string; name: string; number?: string }): Promise<AuthResponse> {
+    console.log('📝 Attempting registration for:', data.email);
     return this.request('/auth/register', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -89,15 +112,31 @@ class ApiService {
   }
 
   async googleAuth() {
-    window.location.href = `${BASE_URL}/auth/google`;
+    console.log('🔗 Initiating Google OAuth flow...');
+    
+    // Get the current frontend URL dynamically
+    const currentOrigin = window.location.origin;
+    const callbackUrl = `${currentOrigin}/auth/google/callback`;
+    
+    // Create the Google auth URL with proper callback
+    const googleAuthUrl = `${BASE_URL}/auth/google?callback_url=${encodeURIComponent(callbackUrl)}`;
+    
+    console.log('🌐 Frontend origin:', currentOrigin);
+    console.log('🔄 Callback URL:', callbackUrl);
+    console.log('🚀 Redirecting to Google auth:', googleAuthUrl);
+    
+    // Redirect to Google OAuth
+    window.location.href = googleAuthUrl;
   }
 
   // User endpoints
   async getUser(): Promise<User> {
+    console.log('👤 Fetching user profile...');
     return this.request('/user/get');
   }
 
   async updateUser(data: Partial<User>): Promise<User> {
+    console.log('📝 Updating user profile...');
     return this.request('/user/update', {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -105,6 +144,7 @@ class ApiService {
   }
 
   async deleteUser(): Promise<void> {
+    console.log('🗑️ Deleting user account...');
     return this.request('/user/delete', {
       method: 'DELETE',
     });
@@ -114,15 +154,21 @@ class ApiService {
   async searchFlights(params: FlightSearchParams): Promise<Flight[]> {
     const queryString = `from=${params.from}&to=${params.to}&fromLocal=${params.fromLocal}&toLocal=${params.toLocal}`;
     
+    console.log('✈️ Searching flights with params:', params);
+    
     try {
       const response: FlightSearchResponse = await this.request(`/api/flights/search?${queryString}`);
       
       if (response && response.filteredFlights && Array.isArray(response.filteredFlights)) {
-        return response.filteredFlights.map(flight => this.transformSearchFlightData(flight));
+        const transformedFlights = response.filteredFlights.map(flight => this.transformSearchFlightData(flight));
+        console.log(`✅ Found ${transformedFlights.length} flights`);
+        return transformedFlights;
       } else {
+        console.warn('⚠️ Unexpected flight search response format:', response);
         return [];
       }
     } catch (error) {
+      console.error('❌ Flight search error:', error);
       throw error;
     }
   }
@@ -131,21 +177,27 @@ class ApiService {
     const cleanId = id.replace(/\s+/g, '');
     const url = `/api/flights/searchone?id=${cleanId}&date=${date}`;
     
+    console.log('✈️ Fetching flight details for:', { id: cleanId, date });
+    
     try {
       const response: FlightDetailsResponse = await this.request(url);
       
       if (response && response.flights && Array.isArray(response.flights) && response.flights.length > 0) {
-        return this.transformFlightDetailsData(response.flights[0]);
+        const flightData = this.transformFlightDetailsData(response.flights[0]);
+        console.log('✅ Flight details retrieved successfully');
+        return flightData;
       } else {
         throw new Error('Flight not found');
       }
     } catch (error) {
+      console.error('❌ Flight details error:', error);
       throw error;
     }
   }
 
   // Booking endpoints
   async createBooking(data: BookingRequest): Promise<Booking> {
+    console.log('📅 Creating booking for flight:', data.flightNumber);
     return this.request('/booking', {
       method: 'POST',
       body: JSON.stringify(data),
@@ -153,14 +205,17 @@ class ApiService {
   }
 
   async getBookings(): Promise<Booking[]> {
+    console.log('📋 Fetching user bookings...');
     return this.request('/booking');
   }
 
   async getBookingDetails(id: string): Promise<Booking> {
+    console.log('📋 Fetching booking details for:', id);
     return this.request(`/booking/${id}`);
   }
 
   async updateBooking(id: string, data: { tier: string }): Promise<Booking> {
+    console.log('📝 Updating booking:', id);
     return this.request(`/booking/${id}`, {
       method: 'PATCH',
       body: JSON.stringify(data),
@@ -168,6 +223,7 @@ class ApiService {
   }
 
   async deleteBooking(id: string): Promise<void> {
+    console.log('🗑️ Cancelling booking:', id);
     return this.request(`/booking/${id}`, {
       method: 'DELETE',
     });

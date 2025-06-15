@@ -5,13 +5,14 @@ export interface User {
   number?: string;
 }
 
+// Updated Flight interface to handle both search and details responses
 export interface Flight {
-  id?: string;
+  id?: string; // We'll generate this from flightNumber
   flightNumber: string;
   airline: {
     name: string;
     code: string;
-  } | string;
+  } | string; // Can be object (search) or string (details)
   status: string;
   departure?: {
     airport: string;
@@ -23,8 +24,9 @@ export interface Flight {
   aircraft: {
     model: string;
     registration: string;
-  } | string;
+  } | string; // Can be object (search) or string (details)
   duration: string;
+  // For flight details response
   from?: {
     airport: string;
     city: string;
@@ -38,15 +40,18 @@ export interface Flight {
     terminal: string;
   };
   distance?: string;
+  // Legacy compatibility fields
   depTime?: string;
   arrTime?: string;
   price?: number;
 }
 
+// Server response wrapper for flight details
 export interface FlightDetailsResponse {
   flights: Flight[];
 }
 
+// Server response wrapper for flight search
 export interface FlightSearchResponse {
   filteredFlights: {
     flightNumber: string;
@@ -81,10 +86,7 @@ export interface Booking {
   arrTime: string;
   tier: string;
   createdAt?: string;
-  updatedAt?: string;
-  bookingDate?: string;
   status?: string;
-  userId?: number;
 }
 
 export interface AuthResponse {

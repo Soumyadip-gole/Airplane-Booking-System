@@ -27,7 +27,7 @@ interface AuthProviderProps {
   children: ReactNode;
 }
 
-// Updated validation function for your server's response format
+// Validation function for server response format
 const validateAuthResponse = (response: any): boolean => {
   return (
     response &&
@@ -39,6 +39,18 @@ const validateAuthResponse = (response: any): boolean => {
   );
 };
 
+// Validation function for external user data (Google auth)
+const validateExternalUserData = (userData: any): boolean => {
+  return (
+    userData &&
+    typeof userData === 'object' &&
+    typeof userData.email === 'string' &&
+    userData.email.length > 0 &&
+    typeof userData.name === 'string' &&
+    userData.name.length > 0
+  );
+};
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
@@ -46,24 +58,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   useEffect(() => {
     const initAuth = async () => {
-      const storedToken = localStorage.getItem('token');
+      const storedToken = localStorage.getItem('token') || sessionStorage.getItem('token');
+      
       if (storedToken) {
         try {
-          console.log('Found stored token, validating with server...');
+          console.log('🔍 Found stored token, validating with server...');
           apiService.setToken(storedToken);
           const userData = await apiService.getUser();
+          
+          // Validate user data from server
+          if (!userData || !userData.email || !userData.name) {
+            throw new Error('Invalid user data received from server');
+          }
+          
           setUser(userData);
           setToken(storedToken);
-          console.log('Token validated, user authenticated:', userData);
+          console.log('✅ Token validated, user authenticated:', {
+            email: userData.email,
+            name: userData.name,
+            id: userData.id
+          });
         } catch (error) {
-          // Provide more specific error handling with clearer messaging
+          console.warn('⚠️ Token validation failed:', error);
+          
           if (error instanceof Error) {
             if (error.message.includes('Unable to connect to server')) {
-              console.warn('Server connection failed during token validation - keeping token for retry');
+              console.warn('🌐 Server connection failed during token validation - keeping token for retry');
               // Don't clear token immediately - server might be temporarily down
-              // Just set loading to false and let user try to reconnect
             } else if (error.message.includes('Unauthorized') || error.message.includes('401')) {
-              console.info('Stored authentication token has expired or is invalid - clearing session (this is normal behavior)');
+              console.info('🔄 Stored authentication token has expired or is invalid - clearing session');
               // Clear invalid token
               localStorage.removeItem('token');
               sessionStorage.removeItem('token');
@@ -71,16 +94,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
               setToken(null);
               setUser(null);
             } else {
-              console.warn('Unexpected error during token validation:', error.message);
-              // For other errors, don't clear the token but log the issue
+              console.warn('❓ Unexpected error during token validation:', error.message);
             }
-          } else {
-            console.warn('Unknown error during token validation:', error);
           }
         }
       } else {
-        console.log('No stored token found - user needs to authenticate');
+        console.log('🔍 No stored token found - user needs to authenticate');
       }
+      
       setIsLoading(false);
     };
 
@@ -89,44 +110,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (email: string, password: string) => {
     try {
-      console.log('Initiating login request...');
+      console.log('🔐 Initiating login request...');
       
       const response = await apiService.login({ email, password });
       
-      // Validate response format based on your server's structure
       if (!validateAuthResponse(response)) {
-        console.error('Invalid response format:', response);
+        console.error('❌ Invalid response format:', response);
         throw new Error('Invalid response format from server');
       }
 
-      console.log('Login response validated:', {
+      console.log('✅ Login response validated:', {
         hasToken: !!response.token,
         userName: response.name,
         userEmail: response.email
       });
 
-      // Create user object from the response
       const userData: User = {
-        id: response.id?.toString() || Date.now().toString(), // Fallback ID if not provided
+        id: response.id?.toString() || Date.now().toString(),
         email: response.email,
         name: response.name,
         number: response.number || undefined
       };
 
-      // Securely store token in both localStorage and sessionStorage for redundancy
+      // Store token securely
       localStorage.setItem('token', response.token);
       sessionStorage.setItem('token', response.token);
       
-      // Update API service with token
+      // Update API service and state
       apiService.setToken(response.token);
-      
-      // Update application state
       setToken(response.token);
       setUser(userData);
       
-      console.log('Login successful - user state updated:', userData);
+      console.log('🎉 Login successful - user state updated');
     } catch (error) {
-      console.error('Login failed:', error);
+      console.error('❌ Login failed:', error);
       // Clear any partial state on error
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
@@ -139,44 +156,40 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const register = async (email: string, password: string, name: string, number?: string) => {
     try {
-      console.log('Initiating registration request...');
+      console.log('📝 Initiating registration request...');
       
       const response = await apiService.register({ email, password, name, number });
       
-      // Validate response format based on your server's structure
       if (!validateAuthResponse(response)) {
-        console.error('Invalid response format:', response);
+        console.error('❌ Invalid response format:', response);
         throw new Error('Invalid response format from server');
       }
 
-      console.log('Registration response validated:', {
+      console.log('✅ Registration response validated:', {
         hasToken: !!response.token,
         userName: response.name,
         userEmail: response.email
       });
 
-      // Create user object from the response
       const userData: User = {
-        id: response.id?.toString() || Date.now().toString(), // Fallback ID if not provided
+        id: response.id?.toString() || Date.now().toString(),
         email: response.email,
         name: response.name,
         number: response.number || number || undefined
       };
 
-      // Securely store token in both localStorage and sessionStorage for redundancy
+      // Store token securely
       localStorage.setItem('token', response.token);
       sessionStorage.setItem('token', response.token);
       
-      // Update API service with token
+      // Update API service and state
       apiService.setToken(response.token);
-      
-      // Update application state
       setToken(response.token);
       setUser(userData);
       
-      console.log('Registration successful - user state updated:', userData);
+      console.log('🎉 Registration successful - user state updated');
     } catch (error) {
-      console.error('Registration failed:', error);
+      console.error('❌ Registration failed:', error);
       // Clear any partial state on error
       localStorage.removeItem('token');
       sessionStorage.removeItem('token');
@@ -188,7 +201,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const logout = () => {
-    console.log('Logging out user...');
+    console.log('👋 Logging out user...');
     localStorage.removeItem('token');
     sessionStorage.removeItem('token');
     apiService.setToken(null);
@@ -200,32 +213,66 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     if (user) {
       const updatedUser = { ...user, ...userData };
       setUser(updatedUser);
-      console.log('User data updated:', updatedUser);
+      console.log('📝 User data updated:', {
+        email: updatedUser.email,
+        name: updatedUser.name
+      });
     }
   };
 
   const setAuthFromExternal = (authToken: string, userData: User) => {
-    console.log('Setting authentication from external provider:', {
-      hasToken: !!authToken,
-      userName: userData.name,
-      userEmail: userData.email
-    });
+    try {
+      console.log('🔗 Setting authentication from external provider...');
+      
+      // Validate token
+      if (!authToken || typeof authToken !== 'string' || authToken.length < 10) {
+        throw new Error('Invalid authentication token provided');
+      }
+      
+      // Validate user data
+      if (!validateExternalUserData(userData)) {
+        throw new Error('Invalid user data provided from external authentication');
+      }
 
-    // Store token securely
-    localStorage.setItem('token', authToken);
-    sessionStorage.setItem('token', authToken);
-    
-    // Update API service with token
-    apiService.setToken(authToken);
-    
-    // Update application state
-    setToken(authToken);
-    setUser(userData);
-    
-    // CRITICAL: Set loading to false after external auth
-    setIsLoading(false);
-    
-    console.log('External authentication successful - user state updated:', userData);
+      console.log('✅ External auth data validated:', {
+        hasToken: !!authToken,
+        userName: userData.name,
+        userEmail: userData.email,
+        userId: userData.id
+      });
+
+      // Ensure user data is properly formatted
+      const validatedUser: User = {
+        id: userData.id || Date.now().toString(),
+        email: userData.email.trim(),
+        name: userData.name.trim(),
+        number: userData.number || undefined
+      };
+
+      // Store token securely
+      localStorage.setItem('token', authToken);
+      sessionStorage.setItem('token', authToken);
+      
+      // Update API service and state
+      apiService.setToken(authToken);
+      setToken(authToken);
+      setUser(validatedUser);
+      
+      // Set loading to false after external auth
+      setIsLoading(false);
+      
+      console.log('🎉 External authentication successful - user state updated');
+    } catch (error) {
+      console.error('❌ External authentication failed:', error);
+      // Clear any partial state on error
+      localStorage.removeItem('token');
+      sessionStorage.removeItem('token');
+      apiService.setToken(null);
+      setToken(null);
+      setUser(null);
+      setIsLoading(false);
+      throw error;
+    }
   };
 
   const value = {

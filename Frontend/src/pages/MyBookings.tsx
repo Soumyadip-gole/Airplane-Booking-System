@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { apiService } from '../services/api';
 import { Booking } from '../types';
-import { Calendar, Plane, MapPin, Clock, Edit2, Trash2, Eye, CheckCircle, XCircle } from 'lucide-react';
+import { Calendar, Plane, MapPin, Clock, Edit2, Trash2, Eye, ChevronDown, ChevronRight } from 'lucide-react';
 
 const MyBookings: React.FC = () => {
   const [bookings, setBookings] = useState<Booking[]>([]);
@@ -10,6 +10,7 @@ const MyBookings: React.FC = () => {
   const [selectedBooking, setSelectedBooking] = useState<Booking | null>(null);
   const [editingTier, setEditingTier] = useState<string>('');
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [showCancelled, setShowCancelled] = useState(false);
 
   useEffect(() => {
     fetchBookings();
@@ -168,109 +169,17 @@ const MyBookings: React.FC = () => {
     return status.charAt(0).toUpperCase() + status.slice(1).toLowerCase();
   };
 
-  // Sort bookings: confirmed first, then cancelled
-  const sortedBookings = [...bookings].sort((a, b) => {
-    const statusA = a.status?.toLowerCase() || 'confirmed';
-    const statusB = b.status?.toLowerCase() || 'confirmed';
-    
-    // Confirmed bookings come first
-    if (statusA === 'confirmed' && statusB !== 'confirmed') return -1;
-    if (statusA !== 'confirmed' && statusB === 'confirmed') return 1;
-    
-    // Within same status, sort by flight date (newest first)
-    return new Date(b.flightDate).getTime() - new Date(a.flightDate).getTime();
-  });
+  // Get confirmed bookings (anything not cancelled)
+  const getConfirmedBookings = () => {
+    return bookings.filter(booking =>
+      !booking.status || booking.status.toLowerCase() !== 'cancelled'
+    );
+  };
 
-  // Group bookings by status
-  const confirmedBookings = sortedBookings.filter(booking => 
-    !booking.status || booking.status.toLowerCase() === 'confirmed'
-  );
-  const cancelledBookings = sortedBookings.filter(booking => 
-    booking.status?.toLowerCase() === 'cancelled'
-  );
-
-  const renderBookingCard = (booking: Booking) => {
-    const isCancelled = booking.status?.toLowerCase() === 'cancelled';
-    
-    return (
-      <div
-        key={booking.id}
-        className={`card-modern p-6 cursor-pointer hover:scale-[1.01] transition-all duration-200 ${
-          selectedBooking?.id === booking.id ? 'ring-2 ring-blue-500' : ''
-        } ${isCancelled ? 'opacity-75' : ''}`}
-        onClick={() => handleViewDetails(booking.id)}
-      >
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex items-center space-x-3">
-            <div className={`p-2 rounded-full ${isCancelled ? 'bg-red-100' : 'bg-blue-100'}`}>
-              <Plane className={`h-5 w-5 ${isCancelled ? 'text-red-600' : 'text-blue-600'}`} />
-            </div>
-            <div>
-              <h3 className="font-semibold text-gray-900">
-                {booking.airline} {booking.flightNumber}
-              </h3>
-              <p className="text-sm text-gray-500">{formatDate(booking.flightDate)}</p>
-            </div>
-          </div>
-          <div className="flex flex-col items-end space-y-2">
-            <div className="flex space-x-2">
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTierBadgeColor(booking.tier)}`}>
-                {booking.tier.charAt(0).toUpperCase() + booking.tier.slice(1)}
-              </span>
-              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(booking.status)}`}>
-                {getStatusDisplayText(booking.status)}
-              </span>
-            </div>
-            {booking.bookingDate && (
-              <p className="text-xs text-gray-400">
-                Booked: {formatBookingDate(booking.bookingDate)}
-              </p>
-            )}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
-          <div>
-            <p className="text-gray-500 mb-1">Departure</p>
-            <p className="font-medium">{booking.depIata}</p>
-            <p className="text-xs text-gray-600">{formatTime(booking.depTime)}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Arrival</p>
-            <p className="font-medium">{booking.arrIata}</p>
-            <p className="text-xs text-gray-600">{formatTime(booking.arrTime)}</p>
-          </div>
-        </div>
-
-        <div className="flex justify-between items-center">
-          <div className="text-xs text-gray-500">
-            Booking ID: #{booking.id}
-          </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleViewDetails(booking.id);
-              }}
-              className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
-              title="View Details"
-            >
-              <Eye className="h-4 w-4" />
-            </button>
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleDeleteBooking(booking.id);
-              }}
-              className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200"
-              title="Cancel Booking"
-              disabled={isCancelled}
-            >
-              <Trash2 className="h-4 w-4" />
-            </button>
-          </div>
-        </div>
-      </div>
+  // Get cancelled bookings
+  const getCancelledBookings = () => {
+    return bookings.filter(booking =>
+      booking.status && booking.status.toLowerCase() === 'cancelled'
     );
   };
 
@@ -319,44 +228,188 @@ const MyBookings: React.FC = () => {
               </button>
             </div>
           ) : (
-            <div className="space-y-8">
+            <div className="space-y-6">
               {/* Confirmed Bookings Section */}
-              {confirmedBookings.length > 0 && (
+              <div>
+                <h2 className="text-xl font-semibold text-gray-900 mb-3">Confirmed Bookings</h2>
                 <div className="space-y-4">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-green-100 p-2 rounded-full">
-                      <CheckCircle className="h-5 w-5 text-green-600" />
+                  {getConfirmedBookings().length === 0 ? (
+                    <div className="card-modern p-6 text-center text-gray-500">
+                      No confirmed bookings
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Confirmed Bookings ({confirmedBookings.length})
-                      </h2>
-                      <p className="text-sm text-gray-600">Your active flight reservations</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {confirmedBookings.map(renderBookingCard)}
-                  </div>
+                  ) : (
+                    getConfirmedBookings().map((booking) => (
+                      <div
+                        key={booking.id}
+                        className={`card-modern p-6 cursor-pointer hover:scale-[1.01] transition-all duration-200 ${
+                          selectedBooking?.id === booking.id ? 'ring-2 ring-blue-500' : ''
+                        }`}
+                        onClick={() => handleViewDetails(booking.id)}
+                      >
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="flex items-center space-x-3">
+                            <div className="bg-blue-100 p-2 rounded-full">
+                              <Plane className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-semibold text-gray-900">
+                                {booking.airline} {booking.flightNumber}
+                              </h3>
+                              <p className="text-sm text-gray-500">{formatDate(booking.flightDate)}</p>
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end space-y-2">
+                            <div className="flex space-x-2">
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTierBadgeColor(booking.tier)}`}>
+                                {booking.tier.charAt(0).toUpperCase() + booking.tier.slice(1)}
+                              </span>
+                              <span className={`px-2 py-1 text-xs font-medium rounded-full ${getStatusBadgeColor(booking.status)}`}>
+                                {getStatusDisplayText(booking.status)}
+                              </span>
+                            </div>
+                            {booking.bookingDate && (
+                              <p className="text-xs text-gray-400">
+                                Booked: {formatBookingDate(booking.bookingDate)}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                          <div>
+                            <p className="text-gray-500 mb-1">Departure</p>
+                            <p className="font-medium">{booking.depIata}</p>
+                            <p className="text-xs text-gray-600">{formatTime(booking.depTime)}</p>
+                          </div>
+                          <div>
+                            <p className="text-gray-500 mb-1">Arrival</p>
+                            <p className="font-medium">{booking.arrIata}</p>
+                            <p className="text-xs text-gray-600">{formatTime(booking.arrTime)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex justify-between items-center">
+                          <div className="text-xs text-gray-500">
+                            Booking ID: #{booking.id}
+                          </div>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleViewDetails(booking.id);
+                              }}
+                              className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                              title="View Details"
+                            >
+                              <Eye className="h-4 w-4" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteBooking(booking.id);
+                              }}
+                              className="p-2 text-red-600 hover:bg-red-50 rounded-md transition-colors duration-200"
+                              title="Cancel Booking"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
                 </div>
-              )}
+              </div>
 
               {/* Cancelled Bookings Section */}
-              {cancelledBookings.length > 0 && (
-                <div className="space-y-4">
-                  <div className="flex items-center space-x-3 mb-6">
-                    <div className="bg-red-100 p-2 rounded-full">
-                      <XCircle className="h-5 w-5 text-red-600" />
+              {getCancelledBookings().length > 0 && (
+                <div>
+                  <button
+                    onClick={() => setShowCancelled(!showCancelled)}
+                    className="flex items-center space-x-2 text-gray-600 hover:text-gray-900 font-semibold text-xl mb-3 focus:outline-none transition-colors duration-200"
+                  >
+                    {showCancelled ? (
+                      <ChevronDown className="h-5 w-5" />
+                    ) : (
+                      <ChevronRight className="h-5 w-5" />
+                    )}
+                    <span>Cancelled Bookings</span>
+                    <span className="text-sm text-gray-500 font-normal">({getCancelledBookings().length})</span>
+                  </button>
+
+                  {showCancelled && (
+                    <div className="space-y-4">
+                      {getCancelledBookings().map((booking) => (
+                        <div
+                          key={booking.id}
+                          className={`card-modern p-6 cursor-pointer hover:scale-[1.01] transition-all duration-200 ${
+                            selectedBooking?.id === booking.id ? 'ring-2 ring-blue-500' : ''
+                          } bg-gray-50`}
+                          onClick={() => handleViewDetails(booking.id)}
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="flex items-center space-x-3">
+                              <div className="bg-red-100 p-2 rounded-full">
+                                <Plane className="h-5 w-5 text-red-600" />
+                              </div>
+                              <div>
+                                <h3 className="font-semibold text-gray-900">
+                                  {booking.airline} {booking.flightNumber}
+                                </h3>
+                                <p className="text-sm text-gray-500">{formatDate(booking.flightDate)}</p>
+                              </div>
+                            </div>
+                            <div className="flex flex-col items-end space-y-2">
+                              <div className="flex space-x-2">
+                                <span className={`px-2 py-1 text-xs font-medium rounded-full ${getTierBadgeColor(booking.tier)}`}>
+                                  {booking.tier.charAt(0).toUpperCase() + booking.tier.slice(1)}
+                                </span>
+                                <span className="px-2 py-1 text-xs font-medium rounded-full bg-red-100 text-red-800">
+                                  Cancelled
+                                </span>
+                              </div>
+                              {booking.bookingDate && (
+                                <p className="text-xs text-gray-400">
+                                  Booked: {formatBookingDate(booking.bookingDate)}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4 text-sm mb-4">
+                            <div>
+                              <p className="text-gray-500 mb-1">Departure</p>
+                              <p className="font-medium">{booking.depIata}</p>
+                              <p className="text-xs text-gray-600">{formatTime(booking.depTime)}</p>
+                            </div>
+                            <div>
+                              <p className="text-gray-500 mb-1">Arrival</p>
+                              <p className="font-medium">{booking.arrIata}</p>
+                              <p className="text-xs text-gray-600">{formatTime(booking.arrTime)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex justify-between items-center">
+                            <div className="text-xs text-gray-500">
+                              Booking ID: #{booking.id}
+                            </div>
+                            <div className="flex space-x-2">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleViewDetails(booking.id);
+                                }}
+                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-md transition-colors duration-200"
+                                title="View Details"
+                              >
+                                <Eye className="h-4 w-4" />
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                    <div>
-                      <h2 className="text-xl font-bold text-gray-900">
-                        Cancelled Bookings ({cancelledBookings.length})
-                      </h2>
-                      <p className="text-sm text-gray-600">Your cancelled flight reservations</p>
-                    </div>
-                  </div>
-                  <div className="space-y-4">
-                    {cancelledBookings.map(renderBookingCard)}
-                  </div>
+                  )}
                 </div>
               )}
             </div>
@@ -461,3 +514,4 @@ const MyBookings: React.FC = () => {
 };
 
 export default MyBookings;
+
