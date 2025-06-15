@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { useNavigate, useSearchParams, useLocation } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { User } from '../types';
 import { AlertTriangle, CheckCircle, Loader, Plane } from 'lucide-react';
@@ -11,6 +11,7 @@ const GoogleCallback: React.FC = () => {
   
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
+  const location = useLocation();
   const { setAuthFromExternal } = useAuth();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState('');
@@ -19,6 +20,7 @@ const GoogleCallback: React.FC = () => {
   // Log URL parameters immediately
   console.log('🔑 Token from URL:', searchParams.get('token') ? 'Present' : 'Missing');
   console.log('👤 User param from URL:', searchParams.get('user') ? 'Present' : 'Missing');
+  console.log('📍 Current location:', location);
 
   useEffect(() => {
     console.log('🔄 useEffect triggered in GoogleCallback');
@@ -29,12 +31,20 @@ const GoogleCallback: React.FC = () => {
         console.log('📍 Current URL:', window.location.href);
         
         // Extract token and user from URL parameters
-        const token = searchParams.get('token');
-        const userParam = searchParams.get('user');
-        
-        console.log('🔑 Token:', token ? 'Present' : 'Missing');
-        console.log('👤 User param:', userParam ? 'Present' : 'Missing');
-        
+        // Check both regular searchParams and hash-based params
+        let token = searchParams.get('token');
+        let userParam = searchParams.get('user');
+
+        // If not found in regular params, check if they're in the hash part
+        if ((!token || !userParam) && location.hash) {
+          console.log('🔍 Checking hash part of URL:', location.hash);
+          const hashParams = new URLSearchParams(location.hash.substring(location.hash.indexOf('?')));
+          token = token || hashParams.get('token');
+          userParam = userParam || hashParams.get('user');
+          console.log('🔑 Token from hash:', token ? 'Present' : 'Missing');
+          console.log('👤 User param from hash:', userParam ? 'Present' : 'Missing');
+        }
+
         if (!token) {
           throw new Error('Authentication token is missing');
         }
@@ -98,7 +108,7 @@ const GoogleCallback: React.FC = () => {
     };
 
     handleGoogleCallback();
-  }, [searchParams, navigate, setAuthFromExternal]);
+  }, [searchParams, navigate, setAuthFromExternal, location]);
 
   console.log('🎨 About to render with status:', status);
 
@@ -198,3 +208,4 @@ const GoogleCallback: React.FC = () => {
 };
 
 export default GoogleCallback;
+
